@@ -1,0 +1,69 @@
+model:
+  vn: vn
+  hidden_channels: 256
+  hidden_channels_vec: 64
+  encoder:
+    name: cftfm
+    hidden_channels: 256
+    hidden_channels_vec: 64
+    edge_channels: 64
+    key_channels: 128
+    num_heads: 4
+    num_interactions: 6
+    cutoff: 10.0
+    knn: 48 # kNN Graph
+  field:
+    name: classifier
+    num_filters: 128
+    num_filters_vec: 32
+    edge_channels: 64
+    num_heads: 4
+    cutoff: 10.0
+    knn: 32 # kNN Graph
+  position:
+    num_filters: 128
+    n_component: 3
+
+train:
+  seed: 2021
+  batch_size: 8
+  num_workers: 8
+  pin_memory: True
+  max_iters: 2000000
+  val_freq: 5000
+  pos_noise_std: 0.1
+  max_grad_norm: 100.0
+  optimizer:
+    type: adam
+    lr: 2.e-4
+    weight_decay: 0
+    beta1: 0.99
+    beta2: 0.999
+  scheduler:
+    type: plateau
+    factor: 0.6
+    patience: 8
+    min_lr: 1.e-5
+  transform:
+    mask:
+      type: mixed
+      min_ratio: 0.0
+      max_ratio: 1.1
+      min_num_masked: 1
+      min_num_unmasked: 0 
+      p_random: 0.15
+      p_bfs: 0.6
+      p_invbfs: 0.25
+    contrastive:
+      num_real: 20
+      num_fake: 20
+      pos_real_std: 0.05
+      pos_fake_std: 2.0
+    edgesampler:
+      k: 8
+      # r: 3
+
+dataset:
+  name: pl
+  path: ./data/crossdocked_pocket10
+  split: ./data/crossdocked_pocket10_split.pt

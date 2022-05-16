@@ -1,0 +1,25 @@
+data:
+  data_name: 'test'
+  dataset:  # test dataset
+    name: pl
+    path: ./data/crossdocked_pocket10
+    split: ./data/crossdocked_pocket10_test120_split.pt
+    data_id: 10  # can be overwrite by argparser
+
+model:
+    checkpoint: ./logs/pl_vn_pos_2021_12_30__10_05_34/checkpoints/475000.pt
+
+sample:
+  seed: 2020
+  mask_init: True
+  num_samples: 100
+  beam_size: 400
+  logp_thres: -.inf
+  num_retry: 5
+  max_steps: 50
+  threshold:
+    focal_threshold: 0.5
+    pos_threshold: 0.25
+    element_threshold: 0.3
+    hasatom_threshold: 0.6
+    bond_threshold: 0.4
