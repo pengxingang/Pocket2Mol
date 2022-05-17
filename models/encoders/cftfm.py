@@ -1,13 +1,10 @@
 import torch
-import torch.nn.functional as F
-from torch.nn import Module, Sequential, ModuleList, Linear, Conv1d, LeakyReLU
-from torch_geometric.nn import radius_graph, knn_graph
-# from torch_geometric.utils import sort_edge_index
-from torch_scatter import scatter_sum, scatter_softmax
+from torch.nn import Module, ModuleList, LeakyReLU
+from torch_scatter import scatter_sum
 from math import pi as PI
 
-from models.common import GaussianSmearing, ShiftedSoftplus, EdgeExpansion
-from models.invariant import GVLinear, GVPerceptronVN, VNLinear, VNLeakyReLU, MessageModule
+from models.common import GaussianSmearing, EdgeExpansion
+from models.invariant import GVLinear, VNLeakyReLU, MessageModule
 
 class CFTransformerEncoderVN(Module):
     
@@ -91,7 +88,6 @@ class AttentionInteractionBlockVN(Module):
         edge_vec_feat = self.vector_expansion(edge_vector) 
 
         msg_j_sca, msg_j_vec = self.message_module(x, (edge_sca_feat, edge_vec_feat), col, edge_dist, annealing=True)
-        # W_v_edge = self.weight_v_edge((edge_sca_feat, edge_vec_feat))
 
         # Aggregate messages
         aggr_msg_sca = scatter_sum(msg_j_sca, row, dim=0, dim_size=N)  #.view(N, -1) # (N, heads*H_per_head)

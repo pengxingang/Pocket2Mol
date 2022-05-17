@@ -1,8 +1,7 @@
 import torch
-from torch.nn import Module, Linear, Embedding, Sequential
+from torch.nn import Module, Sequential
 from torch.nn import functional as F
 
-from .common import MultiLayerPerceptron, compose_context_stable
 from .invariant import GVPerceptronVN, GVLinear
 
 

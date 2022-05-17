@@ -1,15 +1,11 @@
 import torch
-from torch._C import device, dtype
-from torch.nn import Module, Linear, Sequential
-from torch_geometric.nn import radius, knn
-from torch_geometric.utils import sort_edge_index
+from torch.nn import Module, Sequential
 from torch_scatter import scatter_add, scatter_softmax, scatter_sum
 
 from math import pi as PI
 
-from ..common import ShiftedSoftplus, GaussianSmearing, EdgeExpansion
+from ..common import GaussianSmearing, EdgeExpansion
 from ..invariant import GVLinear, GVPerceptronVN, MessageModule
-# from utils.profile import lineprofile
 
 class SpatialClassifierVN(Module):
 
@@ -17,8 +13,7 @@ class SpatialClassifierVN(Module):
         super().__init__()
         self.num_bond_types = num_bond_types
         self.message_module = MessageModule(in_sca, in_vec, edge_channels, edge_channels, num_filters[0], num_filters[1], cutoff)
-        # self.lin1 = GVLinear(in_sca, in_vec, num_filters, num_filters,)
-        # self.lin2 = GVLinear(num_filters, num_filters, num_filters, num_filters)
+
         self.nn_edge_ij = Sequential(
             GVPerceptronVN(edge_channels, edge_channels, num_filters[0], num_filters[1]),
             GVLinear(num_filters[0], num_filters[1], num_filters[0], num_filters[1])
@@ -28,10 +23,7 @@ class SpatialClassifierVN(Module):
             GVPerceptronVN(num_filters[0], num_filters[1], num_filters[0], num_filters[1]),
             GVLinear(num_filters[0], num_filters[1], num_classes, 1)
         )
-        # self.property_pred = Sequential(
-        #     GVPerceptronVN(num_filters[0], num_filters[1], num_filters[0], num_filters[1]),
-        #     GVLinear(num_filters[0], num_filters[1], num_indicators, 1)
-        # )
+
         self.edge_feat = Sequential(
             GVPerceptronVN(num_filters[0] * 2 + in_sca, num_filters[1] * 2 + in_vec, num_filters[0], num_filters[1]),
             GVLinear(num_filters[0], num_filters[1], num_filters[0], num_filters[1])
@@ -75,7 +67,7 @@ class SpatialClassifierVN(Module):
 
         # element prediction
         y_cls, _ = self.classifier(y)  # (N_query, num_classes)
-        # y_ind, _ = self.property_pred(y)   # (N_query, num_indicators)
+
 
         # edge prediction
         if (len(edge_index_query) != 0) and (edge_index_query.size(1) > 0):

@@ -17,8 +17,6 @@ def add_ligand_atom_to_data(data, pos, element, bond_index, bond_type, type_map=
         data.ligand_context_feature_full,
         torch.cat([
             F.one_hot(element.view(1), len(type_map)).to(data.ligand_context_feature_full), # (1, num_elements)
-            # y_ind.sigmoid().bernoulli().to(data.ligand_context_feature_full).view(1, -1),     # (n, num_indicators)
-            # (ind_pred).to(data.ligand_context_feature_full).view(1, -1),     # (n, num_indicators)
             torch.tensor([[1, 0, 0]]).to(data.ligand_context_feature_full),  # is_mol_atom, num_neigh (placeholder), valence (placeholder)
             torch.tensor([[0, 0, 0]]).to(data.ligand_context_feature_full)  # num_of_bonds 1, 2, 3(placeholder)
         ], dim=1)
@@ -88,7 +86,6 @@ def get_next_step(
             parent_sample,
             pos = pos_generated[i],
             element = element_pred[i],
-            # ind_pred = ind_pred[i],
             bond_index = bond_index[:, index_bond_i],
             bond_type = bond_type[index_bond_i],
             type_map = type_map

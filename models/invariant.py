@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Module, Sequential, ModuleList, Linear, LeakyReLU
+from torch.nn import Module, Linear, LeakyReLU
 import numpy as np
 import torch.nn as nn
 from torch_geometric.nn import global_mean_pool
@@ -117,19 +117,16 @@ class VNLeakyReLU(nn.Module):
         return x_out
 
 
+# class VNAvgPool(nn.Module):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__()
+#         self.pool = global_mean_pool
 
-
-
-class VNAvgPool(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.pool = global_mean_pool
-
-    def forward(self, x, batch_idx):
-        '''
-        x: point features of shape [N_samples, N_feat, 3,]
-        '''
-        return self.pool(x, batch=batch_idx)  # (1, N_feat, 3)
+#     def forward(self, x, batch_idx):
+#         '''
+#         x: point features of shape [N_samples, N_feat, 3,]
+#         '''
+#         return self.pool(x, batch=batch_idx)  # (1, N_feat, 3)
 
 
 def mean_pool(x, dim=-1, keepdim=False):

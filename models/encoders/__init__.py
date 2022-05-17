@@ -1,5 +1,4 @@
-from .schnet import SchNetEncoder
-from .cftfm import CFTransformerEncoder, CFTransformerEncoderVN
+from .cftfm import CFTransformerEncoderVN
 
 
 def get_encoder_vn(config):

@@ -1,9 +1,9 @@
 import torch
-from torch.nn import Module, Linear, Embedding
+from torch.nn import Module
 from torch.nn import functional as F
 
-from .encoders import get_encoder, get_encoder_vn
-from .fields import get_field, get_field_vn
+from .encoders import get_encoder_vn
+from .fields import get_field_vn
 from .common import *
 from .embedding import AtomEmbedding
 from .frontier import FrontierLayerVN
@@ -39,12 +39,9 @@ class MaskFillModelVN(Module):
     def sample_init(self,
         compose_feature,
         compose_pos,
-        # idx_ligand,
         idx_protein,
         compose_knn_edge_index,
         compose_knn_edge_feature,
-        # ligand_context_bond_index,
-        # ligand_context_bond_type,
         n_samples_pos=-1,
         n_samples_atom=-1
         ):
@@ -64,7 +61,6 @@ class MaskFillModelVN(Module):
                         idx_focal_in_compose, p_focal,  # focal
                         pos_generated, pdf_pos, abs_pos_mu, pos_sigma, pos_pi,  # positions
                         element_pred, element_prob, has_atom_prob,  # element
-                        # bond_index, bond_type, bond_prob  # bond
                         )
         else:
             return (False, )
@@ -159,7 +155,6 @@ class MaskFillModelVN(Module):
         compose_pos,
         idx_focal_in_compose,
         n_samples=-1,
-        candidate_sample_ratio = 5000
         ):
         n_focals = len(idx_focal_in_compose)
         # # 3: get position distributions and sample positions
@@ -179,7 +174,6 @@ class MaskFillModelVN(Module):
                 pos_target=pos_generated
             )
             idx_parent = torch.repeat_interleave(torch.arange(n_focals), repeats=n_candidate_samples, dim=0).to(compose_pos.device)
-            # pdf_pos = pdf_pos.reshape([n_focals, n_candidate_samples])
 
         return (pos_generated, pdf_pos, idx_parent, abs_pos_mu, pos_sigma, pos_pi)  # position
 
@@ -204,7 +198,6 @@ class MaskFillModelVN(Module):
             ligand_bond_index = ligand_bond_index,
             ligand_bond_type = ligand_bond_type
         )
-        # element_prob, element_pred = F.softmax(y_query_pred, dim=-1).max(-1) #change to sample in the future
         if n_samples < 0:
             # raise NotImplementedError('The following is not fixed (and for/ bond)')
             has_atom_prob =  1 - 1 / (1 + torch.exp(y_query_pred).sum(-1))
@@ -270,7 +263,6 @@ class MaskFillModelVN(Module):
             node_attr_compose = h_compose,
             edge_index_q_cps_knn = query_compose_knn_edge_index,
         )
-        # element_prob, element_pred = F.softmax(y_query_pred, dim=-1).max(-1) #change to sample in the future
         if n_samples < 0:
             # raise NotImplementedError('The following is not fixed')
             has_atom_prob =  1 - 1 / (1 + torch.exp(y_query_pred).sum(-1))
@@ -485,5 +477,4 @@ class MaskFillModelVN(Module):
         tri_edge_index = torch.stack([
             node_a_cps_tri_edge, node_b_cps_tri_edge  # plus len(compose_pos) for dataloader batch
         ], dim=0)
-        # tri_edge_feat = tri_edge_feat
         return index_real_cps_edge_for_atten, tri_edge_index, tri_edge_feat

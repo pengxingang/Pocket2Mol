@@ -1,9 +1,8 @@
 import torch
-from torch.nn import Module, Linear, Embedding, Sequential
+from torch.nn import Module, Sequential
 from torch.nn import functional as F
-from .invariant import GVPerceptronVN, GVLinear, VNLinear
+from .invariant import GVPerceptronVN, GVLinear
 import math
-from torch.distributions.categorical import Categorical
 
 GAUSSIAN_COEF = 1.0 / math.sqrt(2 * math.pi)
 
