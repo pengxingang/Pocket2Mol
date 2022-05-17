@@ -4,7 +4,7 @@ import numpy as np
 from torch_geometric.data import Data, DataLoader, Batch
 
 
-FOLLOW_BATCH = ['protein_element', 'ligand_context_element', 'pos_real', 'pos_fake']
+FOLLOW_BATCH = [] #['protein_element', 'ligand_context_element', 'pos_real', 'pos_fake']
 
 
 class ProteinLigandData(Data):

@@ -1,13 +1,6 @@
 import numpy as np
 from rdkit.Chem import AllChem as Chem
 from rdkit import Geometry
-from openbabel import openbabel as ob
-from openbabel import pybel
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
-import torch
-
-from .protein_ligand import ATOM_FAMILIES_ID
 
 
 class MolReconsError(Exception):

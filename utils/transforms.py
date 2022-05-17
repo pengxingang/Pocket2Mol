@@ -1,5 +1,5 @@
 import copy
-from multiprocessing import context
+# from multiprocessing import context
 import os
 import sys
 sys.path.append('.')
@@ -7,7 +7,7 @@ import random
 import time
 import uuid
 from itertools import compress
-from tqdm import tqdm
+# from tqdm import tqdm
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -17,7 +17,7 @@ from torch_geometric.utils.subgraph import subgraph
 from torch_geometric.nn import knn, radius
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 from torch_scatter import scatter_add
-import multiprocessing as multi
+# import multiprocessing as multi
 from torch_geometric.data import DataLoader
 try:
     from .data import ProteinLigandData
@@ -116,7 +116,7 @@ class FeaturizeLigandAtom(object):
     def __init__(self):
         super().__init__()
         # self.atomic_numbers = torch.LongTensor([1,6,7,8,9,15,16,17])  # H C N O F P S Cl
-        self.atomic_numbers = torch.LongTensor([6,7,8,9,15,16,17])  # H C N O F P S Cl
+        self.atomic_numbers = torch.LongTensor([6,7,8,9,15,16,17])  # C N O F P S Cl
         assert len(self.atomic_numbers) == 7, NotImplementedError('fix the staticmethod: chagne_bond')
 
     # @property
@@ -161,15 +161,15 @@ class FeaturizeLigandBond(object):
         return data
 
 
-class Translation(object):
+# class Translation(object):
 
-    def __init__(self):
-        super().__init__()
+#     def __init__(self):
+#         super().__init__()
 
-    def __call__(self, data:ProteinLigandData):
-        data.ligand_pos = data.ligand_pos - data.ligand_center_of_mass
-        data.protein_pos = data.protein_pos - data.ligand_center_of_mass
-        return data
+#     def __call__(self, data:ProteinLigandData):
+#         data.ligand_pos = data.ligand_pos - data.ligand_center_of_mass
+#         data.protein_pos = data.protein_pos - data.ligand_center_of_mass
+#         return data
 
 
 class LigandCountNeighbors(object):
@@ -407,70 +407,70 @@ class LigandBFSMask(object):
         return data
 
 
-class LigandMaskLinker(object):
-    def __init__(self, linker_data):
-        super().__init__()
-        self.linker_data = linker_data
+# class LigandMaskLinker(object):
+#     def __init__(self, linker_data):
+#         super().__init__()
+#         self.linker_data = linker_data
         
     
-    def __call__(self, data:ProteinLigandData):
-        # data_name = os.path.basename(data.ligand_filename)
-        # indicator = np.where(self.sdf_names == data_name)[0][0]
-        linker_data = self.linker_data
-        context_idx = torch.LongTensor(linker_data['frag_idx'])
-        masked_idx = torch.LongTensor(linker_data['linker_idx'])
-        data.context_idx = context_idx
-        data.masked_idx = masked_idx
+#     def __call__(self, data:ProteinLigandData):
+#         # data_name = os.path.basename(data.ligand_filename)
+#         # indicator = np.where(self.sdf_names == data_name)[0][0]
+#         linker_data = self.linker_data
+#         context_idx = torch.LongTensor(linker_data['frag_idx'])
+#         masked_idx = torch.LongTensor(linker_data['linker_idx'])
+#         data.context_idx = context_idx
+#         data.masked_idx = masked_idx
 
-        # masked ligand atom element/feature/pos.
-        data.ligand_masked_element = data.ligand_element[masked_idx]
-        # data.ligand_masked_feature = data.ligand_atom_feature[masked_idx]   # For Prediction. these features are chem properties
-        data.ligand_masked_pos = data.ligand_pos[masked_idx]
+#         # masked ligand atom element/feature/pos.
+#         data.ligand_masked_element = data.ligand_element[masked_idx]
+#         # data.ligand_masked_feature = data.ligand_atom_feature[masked_idx]   # For Prediction. these features are chem properties
+#         data.ligand_masked_pos = data.ligand_pos[masked_idx]
 
-        # context ligand atom elment/full features/pos. Note: num_neigh and num_valence features should be changed
-        data.ligand_context_element = data.ligand_element[context_idx]
-        data.ligand_context_feature_full = data.ligand_atom_feature_full[context_idx]   # For Input
-        data.ligand_context_pos = data.ligand_pos[context_idx]
+#         # context ligand atom elment/full features/pos. Note: num_neigh and num_valence features should be changed
+#         data.ligand_context_element = data.ligand_element[context_idx]
+#         data.ligand_context_feature_full = data.ligand_atom_feature_full[context_idx]   # For Input
+#         data.ligand_context_pos = data.ligand_pos[context_idx]
 
-        # new bond with ligand context atoms
-        data.ligand_context_bond_index, data.ligand_context_bond_type = subgraph(
-            context_idx,
-            data.ligand_bond_index,
-            edge_attr = data.ligand_bond_type,
-            relabel_nodes = True,
-        )
-        # change context atom features that relate to bonds
-        data.ligand_context_num_neighbors = LigandCountNeighbors.count_neighbors(
-            data.ligand_context_bond_index,
-            symmetry=True,
-            num_nodes = context_idx.size(0),
-        )
-        data.ligand_context_valence = LigandCountNeighbors.count_neighbors(
-            data.ligand_context_bond_index,
-            symmetry=True,
-            valence=data.ligand_context_bond_type,
-            num_nodes=context_idx.size(0)
-        )
-        data.ligand_context_num_bonds = torch.stack([
-            LigandCountNeighbors.count_neighbors(
-                data.ligand_context_bond_index, 
-                symmetry=True, 
-                valence=(data.ligand_context_bond_type == i).long(),
-                num_nodes=context_idx.size(0),
-            ) for i in [1, 2, 3]
-        ], dim = -1)
-        # re-calculate ligand_context_featrure_full
-        data.ligand_context_feature_full = FeaturizeLigandAtom.change_features_of_neigh(
-            data.ligand_context_feature_full,
-            data.ligand_context_num_neighbors,
-            data.ligand_context_valence,
-            data.ligand_context_num_bonds
-        )
+#         # new bond with ligand context atoms
+#         data.ligand_context_bond_index, data.ligand_context_bond_type = subgraph(
+#             context_idx,
+#             data.ligand_bond_index,
+#             edge_attr = data.ligand_bond_type,
+#             relabel_nodes = True,
+#         )
+#         # change context atom features that relate to bonds
+#         data.ligand_context_num_neighbors = LigandCountNeighbors.count_neighbors(
+#             data.ligand_context_bond_index,
+#             symmetry=True,
+#             num_nodes = context_idx.size(0),
+#         )
+#         data.ligand_context_valence = LigandCountNeighbors.count_neighbors(
+#             data.ligand_context_bond_index,
+#             symmetry=True,
+#             valence=data.ligand_context_bond_type,
+#             num_nodes=context_idx.size(0)
+#         )
+#         data.ligand_context_num_bonds = torch.stack([
+#             LigandCountNeighbors.count_neighbors(
+#                 data.ligand_context_bond_index, 
+#                 symmetry=True, 
+#                 valence=(data.ligand_context_bond_type == i).long(),
+#                 num_nodes=context_idx.size(0),
+#             ) for i in [1, 2, 3]
+#         ], dim = -1)
+#         # re-calculate ligand_context_featrure_full
+#         data.ligand_context_feature_full = FeaturizeLigandAtom.change_features_of_neigh(
+#             data.ligand_context_feature_full,
+#             data.ligand_context_num_neighbors,
+#             data.ligand_context_valence,
+#             data.ligand_context_num_bonds
+#         )
 
-        data.ligand_frontier = data.ligand_context_num_neighbors < data.ligand_num_neighbors[context_idx]
+#         data.ligand_frontier = data.ligand_context_num_neighbors < data.ligand_num_neighbors[context_idx]
 
-        data._mask = 'linker'
-        return data
+#         data._mask = 'linker'
+#         return data
 
 
 class LigandMaskAll(LigandRandomMask):
@@ -890,154 +890,3 @@ class EdgeSample(object):
             data.mask_compose_edge_type = torch.empty([0], dtype=torch.int64)
 
         return data
-
-### the following are related to multiprocess data transform
-
-def load_batch_from_disc(data_type, device, data_dir='./logs/tmp_input_data'):
-    file_path = os.path.join(data_dir, data_type)
-    files = os.listdir(file_path)
-    if len(files) > 0:
-        try:
-            file_name = os.path.join(file_path, np.random.choice(files, size=1)[0])
-            data = torch.load(file_name, map_location=device)
-        except EOFError:
-            while True:
-                file_name = os.path.join(file_path, np.random.choice(files, size=1)[0])
-                try:
-                    data = torch.load(file_name, map_location=device)
-                    break
-                except EOFError:
-                    continue
-        os.remove(file_name)
-        return data
-    else:
-        return None
-
-
-def check_train_data(train_iterator, logger, data_dir='./logs/tmp_input_data', threshold_batch=1000):
-    # judge if there are enough batch
-    num_batch = len(os.listdir(data_dir))
-    if num_batch < threshold_batch:
-        # generate files
-        logger.info('Train file remaining: ' + str(num_batch))
-        for _ in range(threshold_batch):
-            filename = uuid.uuid4().hex
-            filepath = os.path.join(data_dir, filename)
-            batch = next(train_iterator)
-            torch.save(batch, filepath)
-        # for _ in tqdm(range(threshold_batch)):
-        #     batch = next(train_iterator).to('cuda')
-        # for _ in tqdm(range(threshold_batch)):
-        #     batch = load_batch_from_disc('train', 'cuda')
-        return train_iterator
-    else:
-        return train_iterator
-
-
-def check_valid_data(val_loader, logger, data_dir):
-    num_batch = len(os.listdir(data_dir))
-    if num_batch== 0:
-        logger.info('Valid file generating ')
-        # generate files
-        for batch in val_loader:
-            filename = uuid.uuid4().hex
-            filepath = os.path.join(data_dir, filename)
-            torch.save(batch, filepath)
-        return val_loader
-    else:
-        return val_loader
-
-
-def data_subprocess(config, transform, log_dir):
-    def get_data_logger(log_dir):
-        logger = logging.getLogger('data')
-        logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('[%(asctime)s::%(name)s::%(levelname)s] %(message)s')
-        # stream_handler = logging.StreamHandler()
-        # stream_handler.setLevel(logging.DEBUG)
-        # stream_handler.setFormatter(formatter)
-        # logger.addHandler(stream_handler)
-        if log_dir is not None:
-            file_handler = logging.FileHandler(os.path.join(log_dir, 'log_data.txt'))
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-        return logger
-    logger = get_data_logger(log_dir)
-    logger.info('Init...')
-
-    # Datasets and loader
-    dataset, subsets = get_dataset(
-        config = config.dataset,
-        transform = transform,
-    )
-    train_set, val_set = subsets['train'], subsets['val']
-
-    follow_batch = []
-    train_iterator = inf_iterator(DataLoader(
-        train_set, 
-        batch_size = config.train.batch_size, 
-        # shuffle = False,
-        shuffle = True,
-        num_workers = config.train.num_workers,
-        follow_batch = follow_batch
-    ))
-    val_loader = DataLoader(val_set, config.train.batch_size, shuffle=False, follow_batch=follow_batch)
-
-    # Prepare data dir
-    data_dir='./logs/tmp_input_data'
-    logger.info('Start checking dir: ' + data_dir)
-    for dir_name in ['train', 'valid']:
-        if not os.path.exists(os.path.join(data_dir, dir_name)):
-            os.makedirs(os.path.join(data_dir, dir_name))
-        else:
-            for file in os.listdir(os.path.join(data_dir, dir_name)):
-                os.remove(os.path.join(data_dir, dir_name, file))
-    # Check
-    cnt_val = 9
-    while True:
-        train_iterator = check_train_data(train_iterator, logger, os.path.join(data_dir, 'train'))
-        cnt_val += 1
-        if cnt_val >= 10:
-            cnt_val = 0
-            val_loader = check_valid_data(val_loader, logger, os.path.join(data_dir, 'valid'))
-
-        time.sleep(30)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, )
-    parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--logdir', type=str, default='./logs')
-    args = parser.parse_args()
-
-    # Load configs
-    config = load_config(args.config)
-    config_name = os.path.basename(args.config)[:os.path.basename(args.config).rfind('.')]
-    seed_all(config.train.seed)
-
-    # Logging
-    log_dir = get_new_log_dir(args.logdir, prefix=config_name)
-    ckpt_dir = os.path.join(log_dir, 'checkpoints')
-    os.makedirs(ckpt_dir, exist_ok=True)
-
-
-    # Transforms
-    protein_featurizer = FeaturizeProteinAtom()
-    ligand_featurizer = FeaturizeLigandAtom()
-    masking = get_mask(config.train.transform.mask)
-    cfg_ctr = config.train.transform.contrastive
-    contrastive_sampler = ContrastiveSample(cfg_ctr.num_real, cfg_ctr.num_fake, cfg_ctr.pos_real_std, cfg_ctr.pos_fake_std, config.model.field.knn)
-    edge_sampler = EdgeSample(config.train.transform.edgesampler)
-    composer = AtomComposer(protein_featurizer.feature_dim, ligand_featurizer.feature_dim, config.model.encoder.knn)
-    transform = Compose([
-        LigandCountNeighbors(),
-        protein_featurizer,
-        ligand_featurizer,
-        # FeaturizeLigandBond(),  # not used for bond embedding. the msk, ctx edge features do not come from ligand_bond_features
-        masking,
-        composer,
-        edge_sampler,
-        contrastive_sampler,
-    ])
-    data_subprocess(config, transform, log_dir)
