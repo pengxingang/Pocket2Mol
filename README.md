@@ -1,4 +1,5 @@
 # Pocket2Mol: Efficient Molecular Sampling Based on 3D Protein Pockets
+[[paper](https://arxiv.org/abs/2205.07249)]
 
 🚧**This is preview version. Still in progress ...**
 
