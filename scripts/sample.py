@@ -315,6 +315,7 @@ if __name__ == '__main__':
                         Chem.SanitizeMol(rdmol)
                         smiles = Chem.MolToSmiles(rdmol)
                         data_next.smiles = smiles
+                        data_next.rdmol = rdmol
                         # valid = filter_rd_mol(rdmol)
                         # if not valid:
                         #     logger.warning('Invalid molecule: %s' % smiles)
