@@ -25,10 +25,11 @@ STATUS_FINISHED = 'finished'
 STATUS_FAILED = 'failed'
 
 
-def logp_to_rank_prob(logp):
+def logp_to_rank_prob(logp, weight):
 
     logp_sum = np.array([np.sum(l) for l in logp])
-    prob = np.exp(logp_sum)
+    prob = np.exp(logp_sum) + 1
+    prob = prob * np.array(weight)
     return prob / prob.sum()
 
 
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, default='./configs/sample.yml')
     parser.add_argument('--outdir', type=str, default='./outputs')
     parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--data_id', type=str, default='0')
+    parser.add_argument('--data_id', type=str, default='3')
     args = parser.parse_args()
 
     # check existing in output dir
@@ -299,6 +300,7 @@ if __name__ == '__main__':
         queue_size = len(pool.queue)
         # # sample candidate new mols from each parent mol
         queue_tmp = []
+        queue_weight = []
         for data in tqdm(pool.queue):
             nexts = []
             data_next_list = get_next(
@@ -312,10 +314,10 @@ if __name__ == '__main__':
                 if data_next.status == STATUS_FINISHED:
                     try:
                         rdmol = reconstruct_from_generated_with_edges(data_next)
-                        Chem.SanitizeMol(rdmol)
-                        smiles = Chem.MolToSmiles(rdmol)
-                        data_next.smiles = smiles
                         data_next.rdmol = rdmol
+                        mol = Chem.MolFromSmiles(Chem.MolToSmiles(rdmol))
+                        smiles = Chem.MolToSmiles(mol)
+                        data_next.smiles = smiles
                         # valid = filter_rd_mol(rdmol)
                         # if not valid:
                         #     logger.warning('Invalid molecule: %s' % smiles)
@@ -337,8 +339,10 @@ if __name__ == '__main__':
                     nexts.append(data_next)
 
             queue_tmp += nexts
+            if len(nexts) > 0:
+                queue_weight += [1. / len(nexts)] * len(nexts)
         # # random choose mols from candidates
-        prob = logp_to_rank_prob(np.array([p.average_logp[2:] for p in queue_tmp]))  # (logp_focal, logpdf_pos), logp_element, logp_hasatom, logp_bond
+        prob = logp_to_rank_prob(np.array([p.average_logp[2:] for p in queue_tmp]), queue_weight)  # (logp_focal, logpdf_pos), logp_element, logp_hasatom, logp_bond
         n_tmp = len(queue_tmp)
         next_idx = np.random.choice(np.arange(n_tmp), p=prob, size=min(config.sample.beam_size, n_tmp), replace=False)
         pool.queue = [queue_tmp[idx] for idx in next_idx]
@@ -346,15 +350,13 @@ if __name__ == '__main__':
         print_pool_status(pool, logger)
         # torch.save(pool, os.path.join(log_dir, 'samples_%d.pt' % global_step))
 
-    torch.save(pool, os.path.join(log_dir, 'samples_all.pt'))
-
     # # Save sdf mols
     sdf_dir = os.path.join(log_dir, 'SDF')
     os.makedirs(sdf_dir)
     with open(os.path.join(log_dir, 'SMILES.txt'), 'a') as smiles_f:
         for i, data_finished in enumerate(pool['finished']):
             smiles_f.write(data_finished.smiles + '\n')
-            writer = Chem.SDWriter(os.path.join(sdf_dir, '%d.sdf' % i))
-            writer.SetKekulize(False)
-            writer.write(data_finished.rdmol, confId=0)
-            writer.close()
+            rdmol = data_finished.rdmol
+            Chem.MolToMolFile(rdmol, os.path.join(sdf_dir, '%d.sdf' % i))
+
+    torch.save(pool, os.path.join(log_dir, 'samples_all.pt'))
