@@ -1,5 +1,5 @@
-import sys
-sys.path.append('.')
+# import sys
+# sys.path.append('.')
 import os
 import shutil
 import argparse
@@ -16,11 +16,10 @@ from utils.datasets import *
 from utils.transforms import *
 from utils.misc import *
 from utils.train import *
-from apex import amp
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='./configs/pl_vn_pos.yml')
+    parser.add_argument('--config', type=str, default='./configs/train.yml')
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--logdir', type=str, default='./logs')
     args = parser.parse_args()
@@ -29,6 +28,8 @@ if __name__ == '__main__':
     config = load_config(args.config)
     config_name = os.path.basename(args.config)[:os.path.basename(args.config).rfind('.')]
     seed_all(config.train.seed)
+    if config.train.use_apex:
+        from apex import amp
 
     # Logging
     log_dir = get_new_log_dir(args.logdir, prefix=config_name)
@@ -52,11 +53,9 @@ if __name__ == '__main__':
     contrastive_sampler = ContrastiveSample(cfg_ctr.num_real, cfg_ctr.num_fake, cfg_ctr.pos_real_std, cfg_ctr.pos_fake_std, config.model.field.knn)
     transform = Compose([
         RefineData(),
-        # Translation(),
         LigandCountNeighbors(),
         protein_featurizer,
         ligand_featurizer,
-        # FeaturizeLigandBond(),  # not used for bond embedding. the msk, ctx edge features do not come from ligand_bond_features
         masking,
         composer,
 
@@ -71,8 +70,8 @@ if __name__ == '__main__':
         config = config.dataset,
         transform = transform,
     )
-    train_set, val_set = subsets['train'], subsets['val']
-    follow_batch = []  # ['pos_real', 'pos_fake', 'compose_pos']
+    train_set, val_set = subsets['train'], subsets['test']
+    follow_batch = []  
     train_iterator = inf_iterator(DataLoader(
         train_set, 
         batch_size = config.train.batch_size, 
@@ -89,7 +88,6 @@ if __name__ == '__main__':
         model = MaskFillModelVN(
             config.model, 
             num_classes = contrastive_sampler.num_elements,
-            # num_indicators = ligand_featurizer.num_properties,
             num_bond_types = edge_sampler.num_bond_types,
             protein_atom_feature_dim = protein_featurizer.feature_dim,
             ligand_atom_feature_dim = ligand_featurizer.feature_dim,
@@ -99,7 +97,8 @@ if __name__ == '__main__':
     # Optimizer and scheduler
     optimizer = get_optimizer(config.train.optimizer, model)
     scheduler = get_scheduler(config.train.scheduler, optimizer)
-    model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
+    if config.train.use_apex:
+        model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
 
     def train(it):
         # model.train()  has been moved to the end of validation function
@@ -131,16 +130,17 @@ if __name__ == '__main__':
             pos_generate=batch.pos_generate,
             idx_protein_all_mask = batch.idx_protein_all_mask,
             y_protein_frontier = batch.y_protein_frontier,
-            # pos_notgenerate=batch.pos_notgenerate,
 
             compose_knn_edge_index = batch.compose_knn_edge_index,
             compose_knn_edge_feature = batch.compose_knn_edge_feature,
             real_compose_knn_edge_index = torch.stack([batch.real_compose_knn_edge_index_0, batch.real_compose_knn_edge_index_1], dim=0),
             fake_compose_knn_edge_index = torch.stack([batch.fake_compose_knn_edge_index_0, batch.fake_compose_knn_edge_index_1], dim=0),
         )
-        with amp.scale_loss(loss, optimizer) as scaled_loss:
-            scaled_loss.backward()
-        # loss.backward()
+        if config.train.use_apex:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
         orig_grad_norm = clip_grad_norm_(model.parameters(), config.train.max_grad_norm, error_if_nonfinite=True)  # 5% running time
         optimizer.step()
 
@@ -151,12 +151,10 @@ if __name__ == '__main__':
         writer.add_scalar('train/loss_fron', loss_frontier, it)
         writer.add_scalar('train/loss_pos', loss_pos, it)
         writer.add_scalar('train/loss_cls', loss_cls, it)
-        # writer.add_scalar('train/loss_ind', loss_ind, it)
         writer.add_scalar('train/loss_edge', loss_edge, it)
         writer.add_scalar('train/loss_real', loss_real, it)
         writer.add_scalar('train/loss_fake', loss_fake, it)
         writer.add_scalar('train/loss_surf', loss_surf, it)
-        # writer.add_scalar('train/loss_notpos', loss_notpos, it)
         writer.add_scalar('train/lr', optimizer.param_groups[0]['lr'], it)
         writer.add_scalar('train/grad', orig_grad_norm, it)
         writer.flush()
@@ -170,7 +168,6 @@ if __name__ == '__main__':
                 loss_list = model.get_loss(
                     pos_real = batch.pos_real,
                     y_real = batch.cls_real.long(),
-                    # p_real = batch.ind_real.float(),    # Binary indicators: float
                     pos_fake = batch.pos_fake,
 
                     edge_index_real = torch.stack([batch.real_compose_edge_index_0, batch.real_compose_edge_index_1], dim=0),
@@ -190,7 +187,6 @@ if __name__ == '__main__':
                     pos_generate = batch.pos_generate,
                     idx_protein_all_mask = batch.idx_protein_all_mask,
                     y_protein_frontier = batch.y_protein_frontier,
-                    # pos_notgenerate=batch.pos_notgenerate,
 
                     compose_knn_edge_index = batch.compose_knn_edge_index,
                     compose_knn_edge_feature = batch.compose_knn_edge_feature,
@@ -215,12 +211,10 @@ if __name__ == '__main__':
         writer.add_scalar('val/loss_fron', avg_loss[1], it)
         writer.add_scalar('val/loss_pos', avg_loss[2], it)
         writer.add_scalar('val/loss_cls', avg_loss[3], it)
-        # writer.add_scalar('val/loss_ind', avg_loss[4], it)
         writer.add_scalar('val/loss_edge', avg_loss[4], it)
         writer.add_scalar('val/loss_real', avg_loss[5], it)
         writer.add_scalar('val/loss_fake', avg_loss[6], it)
         writer.add_scalar('val/loss_surf', avg_loss[7], it)
-        # writer.add_scalar('val/loss_notpos', avg_loss[8], it)
         writer.flush()
         return avg_loss
 

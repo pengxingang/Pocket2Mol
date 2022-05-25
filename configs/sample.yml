@@ -3,7 +3,7 @@ data:
   dataset:  # test dataset
     name: pl
     path: ./data/crossdocked_pocket10
-    split: ./data/crossdocked_pocket10_test120_split.pt
+    split: ./data/split_by_name.pt
 
 model:
     checkpoint: ./ckpt/pretrained.pt
@@ -11,10 +11,8 @@ model:
 sample:
   seed: 2020
   mask_init: True
-  num_samples: 50
-  beam_size: 200
-  # logp_thres: -.inf
-  # num_retry: 5
+  num_samples: 100
+  beam_size: 300
   max_steps: 50
   threshold:
     focal_threshold: 0.5

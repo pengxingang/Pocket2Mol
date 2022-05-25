@@ -26,6 +26,7 @@ model:
 
 train:
   seed: 2021
+  use_apex: False
   batch_size: 8
   num_workers: 8
   pin_memory: True
@@ -61,9 +62,9 @@ train:
       pos_fake_std: 2.0
     edgesampler:
       k: 8
-      # r: 3
+
 
 dataset:
   name: pl
   path: ./data/crossdocked_pocket10
-  split: ./data/crossdocked_pocket10_split.pt
+  split: ./data/split_by_name.pt

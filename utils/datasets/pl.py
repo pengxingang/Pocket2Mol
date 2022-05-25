@@ -16,6 +16,7 @@ class PocketLigandPairDataset(Dataset):
         self.raw_path = raw_path.rstrip('/')
         self.index_path = os.path.join(self.raw_path, 'index.pkl')
         self.processed_path = os.path.join(os.path.dirname(self.raw_path), os.path.basename(self.raw_path) + '_processed.lmdb')
+        self.name2id_path = os.path.join(os.path.dirname(self.raw_path), os.path.basename(self.raw_path) + '_name2id.pt')
         self.transform = transform
         self.db = None
 
@@ -23,6 +24,9 @@ class PocketLigandPairDataset(Dataset):
 
         if not os.path.exists(self.processed_path):
             self._process()
+            self._precompute_name2id()
+
+        self.name2id = torch.load(self.name2id_path)
 
     def _connect_db(self):
         """
@@ -80,6 +84,18 @@ class PocketLigandPairDataset(Dataset):
                     print('Skipping (%d) %s' % (num_skipped, ligand_fn, ))
                     continue
         db.close()
+
+    def _precompute_name2id(self):
+        name2id = {}
+        for i in tqdm(range(self.__len__()), 'Indexing'):
+            try:
+                data = self.__getitem__(i)
+            except AssertionError as e:
+                print(i, e)
+                continue
+            name = (data.protein_filename, data.ligand_filename)
+            name2id[name] = i
+        torch.save(name2id, self.name2id_path)
     
     def __len__(self):
         if self.db is None:

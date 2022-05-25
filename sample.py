@@ -1,7 +1,7 @@
 from copy import deepcopy
 import os
-import sys
-sys.path.append('.')
+# import sys
+# sys.path.append('.')
 import shutil
 import argparse
 # import random
@@ -137,36 +137,12 @@ def print_pool_status(pool, logger):
     ))
 
 
-# def random_roll_back(data):
-#     num_steps = len(data.logp_history)
-#     back_to = random.randint(1, max(1, num_steps-1))
-#     data.ligand_context_element = data.ligand_context_element[:back_to]
-#     data.ligand_context_feature_full = data.ligand_context_feature_full[:back_to]
-#     data.ligand_context_pos = data.ligand_context_pos[:back_to]
-#     data.logp_history = data.logp_history[:back_to]
-
-#     data.total_logp = np.sum(data.logp_history)
-#     data.average_logp = np.mean(data.logp_history)
-    
-#     return data
-
-
-# def data_exists(data, prevs):
-#     for other in prevs:
-#         if len(data.logp_history) == len(other.logp_history):
-#             if (data.ligand_context_element == other.ligand_context_element).all().item() and \
-#                 (data.ligand_context_feature_full == other.ligand_context_feature_full).all().item() and \
-#                 torch.allclose(data.ligand_context_pos, other.ligand_context_pos):
-#                 return True
-#     return False
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default='./configs/sample.yml')
     parser.add_argument('--outdir', type=str, default='./outputs')
     parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--data_id', type=str, default='3')
+    parser.add_argument('-i', '--data_id', type=str, default='0')
     args = parser.parse_args()
 
     # check existing in output dir
@@ -191,14 +167,7 @@ if __name__ == '__main__':
 
     # # Get pdb id or data_idx
     data_id = int(args.data_id)
-    # if len(data_id) == 0:
-    #     if config.data.data_name =='test':
-    #         data_id = config.data.dataset.data_id
-    #     elif config.data.data_name =='new':
-    #         data_id = config.data.new_data.pdb_id
-    # else:
-    #     data_id = int(data_id)
-        
+
     # # Logging
     log_dir = get_new_log_dir(args.outdir, prefix='%s_%s' % (config_name, data_id))
     logger = get_logger('sample', log_dir)
@@ -225,9 +194,6 @@ if __name__ == '__main__':
         )
         testset = subsets['test']
         base_data = testset[data_id]
-    elif config.data.data_name == 'new':
-        base_data = get_data_new_mol(config.data.new_data, data_id)
-        base_data = transform_data(base_data, transform)
 
     # # Model (Main)
     logger.info('Loading main model...')
@@ -318,10 +284,6 @@ if __name__ == '__main__':
                         mol = Chem.MolFromSmiles(Chem.MolToSmiles(rdmol))
                         smiles = Chem.MolToSmiles(mol)
                         data_next.smiles = smiles
-                        # valid = filter_rd_mol(rdmol)
-                        # if not valid:
-                        #     logger.warning('Invalid molecule: %s' % smiles)
-                        #     pool.failed.append(data_next)
                         if smiles in pool.smiles:
                             logger.warning('Duplicate molecule: %s' % smiles)
                             pool.duplicate.append(data_next)

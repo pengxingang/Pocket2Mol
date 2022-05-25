@@ -348,24 +348,24 @@ class MaskFillModelVN(Module):
         loss_surf = F.binary_cross_entropy_with_logits(
             input=y_protein_frontier_pred,
             target=y_protein_frontier.view(-1, 1).float()
-        ).clamp_max(1.)
+        ).clamp_max(10.)
         loss_frontier = F.binary_cross_entropy_with_logits(
             input = y_frontier_pred,
             target = y_frontier.view(-1, 1).float()
-        ).clamp_max(1.)
+        ).clamp_max(10.)
         loss_pos = -torch.log(
             self.pos_predictor.get_mdn_probability(abs_pos_mu, pos_sigma, pos_pi, pos_generate) + 1e-16
-        ).mean().clamp_max(4.)
+        ).mean().clamp_max(10.)
         # loss_notpos = self.pos_predictor.get_mdn_probability(abs_pos_mu, pos_sigma, pos_pi, pos_notgenerate).mean()
-        loss_cls = self.smooth_cross_entropy(y_real_pred, y_real.argmax(-1)).clamp_max(2.)    # Classes
-        loss_edge = F.cross_entropy(edge_pred, edge_label).clamp_max(1.3)
+        loss_cls = self.smooth_cross_entropy(y_real_pred, y_real.argmax(-1)).clamp_max(10.)    # Classes
+        loss_edge = F.cross_entropy(edge_pred, edge_label).clamp_max(10.)
         # real and fake loss
         energy_real = -1 *  torch.logsumexp(y_real_pred, dim=-1)  # (N_real)
         energy_fake = -1 * torch.logsumexp(y_fake_pred, dim=-1)   # (N_fake)
         energy_real = torch.clamp_max(energy_real, 40)
         energy_fake = torch.clamp_min(energy_fake, -40)
-        loss_real = self.bceloss_with_logits(-energy_real, torch.ones_like(energy_real)).clamp_max(1.)
-        loss_fake = self.bceloss_with_logits(-energy_fake, torch.zeros_like(energy_fake)).clamp_max(2.)
+        loss_real = self.bceloss_with_logits(-energy_real, torch.ones_like(energy_real)).clamp_max(10.)
+        loss_fake = self.bceloss_with_logits(-energy_fake, torch.zeros_like(energy_fake)).clamp_max(10.)
 
         loss = (torch.nan_to_num(loss_frontier)
                     + torch.nan_to_num(loss_pos)

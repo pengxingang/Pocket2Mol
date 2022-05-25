@@ -1,7 +1,7 @@
 # Pocket2Mol: Efficient Molecular Sampling Based on 3D Protein Pockets
 [[paper](https://arxiv.org/abs/2205.07249)]
 
-🚧**This is preview version. Still in progress ...**
+🚧**Still in progress ...**
 
 
 ## Installation
@@ -24,6 +24,8 @@ conda activate Pocket2Mol
 ```
 
 ### Manually installation
+
+For sampling only:
 ``` bash
 conda create -n Pocket2Mol python=3.8
 conda activate Pocket2Mol
@@ -38,6 +40,9 @@ conda install -c conda-forge rdkit
 conda install pyyaml easydict python-lmdb -c conda-forge
 ```
 
+For training, we recommend to install [`apex` ](https://github.com/NVIDIA/apex) for lower gpu memory usage. If  so, change the value of `train/use_apex` in the `configs/train.yml` file.
+
+
 ## Datasets
 
 Please refer to [`README.md`](./data/README.md) in the `data` folder.
@@ -48,17 +53,19 @@ Please refer to [`README.md`](./data/README.md) in the `data` folder.
 To sample molecules for the i-th pocket in the testset, please first download the trained models following [`README.md`](./ckpt/README.md) in the `ckpt` folder. 
 Then, run the following command:
 ```bash
-python scripts/sample.py --data_id {i} --outdir ./outputs  # Replace {i} with the index of the data. i should be between 0 and 119 for the testset.
+python sample.py --data_id {i} --outdir ./outputs  # Replace {i} with the index of the data. i should be between 0 and 99 for the testset.
 ```
 We recommend to specify the GPU device number and restrict the cpu cores using command like:
 ```bash
-CUDA_VISIBLE_DIVICES=0  taskset -c 0 python scripts/sample.py --data_id 0 --outdir ./outputs
+CUDA_VISIBLE_DIVICES=0  taskset -c 0 python sample.py --data_id 0 --outdir ./outputs
 ```
 ### Sampling for PDB pockets 
 TODO
 
 ## Training
-TODO
+```
+python train.py
+```
 
 ## Citation
 ```
