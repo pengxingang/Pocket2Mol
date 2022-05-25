@@ -1,5 +1,9 @@
 # Pocket2Mol: Efficient Molecular Sampling Based on 3D Protein Pockets
-[[paper](https://arxiv.org/abs/2205.07249)]
+
+[Pocket2Mol](https://arxiv.org/abs/2205.07249) used equivariant graph neural networks to improve efficiency and molecule quality of [previous structure-based drug design model](https://arxiv.org/abs/2203.10446).
+
+<img src="./assets/model.jpg" alt="model"  width="70%"/>
+
 
 🚧**Still in progress ...**
 
