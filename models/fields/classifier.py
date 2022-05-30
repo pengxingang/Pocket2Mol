@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Module, Sequential
+from torch.nn import Module, Sequential, LayerNorm
 from torch_scatter import scatter_add, scatter_softmax, scatter_sum
 
 from math import pi as PI
@@ -118,6 +118,8 @@ class AttentionEdges(Module):
         self.v_lin = GVLinear(hidden_channels[0], hidden_channels[1], hidden_channels[0], hidden_channels[1])
 
         self.atten_bias_lin = AttentionBias(self.num_heads, hidden_channels, num_bond_types=num_bond_types)
+        self.layernorm_sca = LayerNorm([hidden_channels[0]])
+        self.layernorm_vec = LayerNorm([hidden_channels[1], 3])
 
     def forward(self, edge_attr, edge_index, pos_compose, 
                           index_real_cps_edge_for_atten, tri_edge_index, tri_edge_feat,):
@@ -182,6 +184,8 @@ class AttentionEdges(Module):
 
         # output 
         output = [edge_attr[0] + output[0], edge_attr[1] + output[1]]
+        output = [self.layernorm_sca(output[0]), self.layernorm_vec(output[1])]
+
         return output
 
 

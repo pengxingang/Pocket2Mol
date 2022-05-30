@@ -37,22 +37,8 @@ import logging
 class RefineData(object):
     def __init__(self):
         super().__init__()
-        self.errorous_ligands = [
-            'BAZ2B_HUMAN_2053_2168_0/5dyu_A_rec_4cur_la7_lig_it2_tt_docked_11.sdf',
-            'BAZ2B_HUMAN_2053_2168_0/3q2f_A_rec_4cur_la7_lig_it2_tt_docked_11.sdf',
-            'BAZ2B_HUMAN_2053_2168_0/5e9k_A_rec_4cur_la7_lig_it2_tt_docked_11.sdf'
-        ]
+
     def __call__(self, data):
-        if data.ligand_filename in self.errorous_ligands:  # delete long bond
-            bond_index = data.ligand_bond_index
-            ligand_pos = data.ligand_pos
-            node0 = ligand_pos[bond_index[0]]
-            node1 = ligand_pos[bond_index[1]]
-            vec = node0 - node1
-            dist = torch.norm(vec, p=2, dim=-1)
-            ind_valid = (dist < 3)
-            data.ligand_bond_index = data.ligand_bond_index[:, ind_valid]
-            data.ligand_bond_type = data.ligand_bond_type[ind_valid]
         # delete H atom of pocket
         protein_element = data.protein_element
         is_H_protein = (protein_element == 1)
@@ -161,17 +147,6 @@ class FeaturizeLigandBond(object):
         return data
 
 
-# class Translation(object):
-
-#     def __init__(self):
-#         super().__init__()
-
-#     def __call__(self, data:ProteinLigandData):
-#         data.ligand_pos = data.ligand_pos - data.ligand_center_of_mass
-#         data.protein_pos = data.protein_pos - data.ligand_center_of_mass
-#         return data
-
-
 class LigandCountNeighbors(object):
 
     @staticmethod
@@ -252,12 +227,16 @@ class LigandRandomMask(object):
         data.ligand_context_pos = data.ligand_pos[context_idx]
 
         # new bond with ligand context atoms
-        data.ligand_context_bond_index, data.ligand_context_bond_type = subgraph(
-            context_idx,
-            data.ligand_bond_index,
-            edge_attr = data.ligand_bond_type,
-            relabel_nodes = True,
-        )
+        if data.ligand_bond_index.size(1) != 0:
+            data.ligand_context_bond_index, data.ligand_context_bond_type = subgraph(
+                context_idx,
+                data.ligand_bond_index,
+                edge_attr = data.ligand_bond_type,
+                relabel_nodes = True,
+            )
+        else:
+            data.ligand_context_bond_index = torch.empty([2, 0], dtype=torch.long)
+            data.ligand_context_bond_type = torch.empty([0], dtype=torch.long)
         # change context atom features that relate to bonds
         data.ligand_context_num_neighbors = LigandCountNeighbors.count_neighbors(
             data.ligand_context_bond_index,
@@ -366,12 +345,16 @@ class LigandBFSMask(object):
         data.ligand_context_pos = data.ligand_pos[context_idx]
 
         # new bond with ligand context atoms
-        data.ligand_context_bond_index, data.ligand_context_bond_type = subgraph(
-            context_idx,
-            data.ligand_bond_index,
-            edge_attr = data.ligand_bond_type,
-            relabel_nodes = True,
-        )
+        if data.ligand_bond_index.size(1) != 0:
+            data.ligand_context_bond_index, data.ligand_context_bond_type = subgraph(
+                context_idx,
+                data.ligand_bond_index,
+                edge_attr = data.ligand_bond_type,
+                relabel_nodes = True,
+            )
+        else:
+            data.ligand_context_bond_index = torch.empty([2, 0], dtype=torch.long)
+            data.ligand_context_bond_type = torch.empty([0], dtype=torch.long)
         # re-calculate atom features that relate to bond
         data.ligand_context_num_neighbors = LigandCountNeighbors.count_neighbors(
             data.ligand_context_bond_index,
@@ -738,6 +721,9 @@ class FocalBuilder(object):
             
         else:  # # the initial atom. surface atoms between ligand and protein
             assign_index = radius(x=ligand_masked_pos, y=protein_pos, r=4., num_workers=16)
+            if assign_index.size(1) == 0:
+                dist = torch.norm(data.protein_pos.unsqueeze(1) - data.ligand_masked_pos.unsqueeze(0), p=2, dim=-1)
+                assign_index = torch.nonzero(dist <= torch.min(dist)+1e-5)[0:1].transpose(0, 1)
             idx_focal_in_protein = assign_index[0]
             data.idx_focal_in_compose = idx_focal_in_protein  # no ligand context, so all composes are protein atoms
             data.pos_generate = ligand_masked_pos[assign_index[1]]

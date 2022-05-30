@@ -1,16 +1,9 @@
-data:
-  data_name: 'test'
-  dataset:  # test dataset
-    name: pl
-    path: ./data/crossdocked_pocket10
-    split: ./data/split_by_name.pt
 
 model:
     checkpoint: ./ckpt/pretrained_Pocket2Mol.pt
 
 sample:
   seed: 2020
-  mask_init: True
   num_samples: 100
   beam_size: 300
   max_steps: 50

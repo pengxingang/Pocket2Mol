@@ -5,9 +5,6 @@
 <img src="./assets/model.jpg" alt="model"  width="70%"/>
 
 
-🚧**Still in progress ...**
-
-
 ## Installation
 ### Dependency
 The code has been tested in the following environment:
@@ -18,8 +15,8 @@ PyTorch | 1.10.1
 CUDA | 11.3.1
 PyTorch Geometric | **1.7.2**
 RDKit | 2022.09.5
-<!-- OpenBabel | 3.1.0
-BioPython | 1.79 -->
+BioPython | 1.79
+<!-- OpenBabel | 3.1.0 -->
 NOTE: Current implementation relies on PyTorch Geometric (PyG) < 2.0.0. We will fix compatability issues for the latest PyG version in the future.
 ### Install via conda yaml file (cuda 11.3)
 ```bash
@@ -27,24 +24,27 @@ conda env create -f env_cuda113.yml
 conda activate Pocket2Mol
 ```
 
-### Manually installation
+### Install manually
 
-For sampling only:
 ``` bash
 conda create -n Pocket2Mol python=3.8
 conda activate Pocket2Mol
 
+# Install PyTorch and PyTorch Geometric (1.7.2)
 conda install pytorch==1.10.1 cudatoolkit=11.3 -c pytorch -c conda-forge
 pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.10.1+cu113.html
 pip install torch-sparse -f https://pytorch-geometric.com/whl/torch-1.10.1+cu113.html
 pip install torch-cluster -f https://data.pyg.org/whl/torch-1.10.1+cu113.html
 pip install torch-geometric==1.7.2
 
+# Install other tools
 conda install -c conda-forge rdkit
+conda install biopython -c conda-forge # used only in sample_for_pdb.py
 conda install pyyaml easydict python-lmdb -c conda-forge
-```
 
-For training, we recommend to install [`apex` ](https://github.com/NVIDIA/apex) for lower gpu memory usage. If  so, change the value of `train/use_apex` in the `configs/train.yml` file.
+# Install tensorboard only for training
+conda install tensorboard -c conda-forge  
+```
 
 
 ## Datasets
@@ -64,12 +64,25 @@ We recommend to specify the GPU device number and restrict the cpu cores using c
 CUDA_VISIBLE_DIVICES=0  taskset -c 0 python sample.py --data_id 0 --outdir ./outputs
 ```
 ### Sampling for PDB pockets 
-TODO
+To generate ligands for your own pocket, you need to provide the `PDB` structure file of the protein, the center coordinate of the pocket bounding box, and optionally the side length of the bounding box (default: 23Å).
+
+Example:
+
+```bash
+python sample_for_pdb.py \
+      --pdb_path ./example/4yhj.pdb
+      --center 32..0, 28.0, 36.0
+```
+
+<img src="./assets/bounding_box.png" alt="bounding box" width="70%" />
+
 
 ## Training
+
 ```
-python train.py
+python train.py --config ./configs/train.yml
 ```
+For training, we recommend to install [`apex` ](https://github.com/NVIDIA/apex) for lower gpu memory usage. If  so, change the value of `train/use_apex` in the `configs/train.yml` file.
 
 ## Citation
 ```
@@ -80,3 +93,6 @@ python train.py
   year={2022}
 }
 ```
+
+## TODO
+- [ ] Fix the compatability issues for the latest PyG version (>=2.0.0).

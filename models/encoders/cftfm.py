@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Module, ModuleList, LeakyReLU
+from torch.nn import Module, ModuleList, LeakyReLU, LayerNorm
 from torch_scatter import scatter_sum
 from math import pi as PI
 
@@ -71,6 +71,9 @@ class AttentionInteractionBlockVN(Module):
         self.act_vec = VNLeakyReLU(hidden_channels[1])
         self.out_transform = GVLinear(hidden_channels[0], hidden_channels[1], hidden_channels[0], hidden_channels[1])
 
+        self.layernorm_sca = LayerNorm([hidden_channels[0]])
+        self.layernorm_vec = LayerNorm([hidden_channels[1], 3])
+
     def forward(self, x, edge_index, edge_feature, edge_vector):
         """
         Args:
@@ -96,6 +99,8 @@ class AttentionInteractionBlockVN(Module):
         out_sca = x_out_sca + aggr_msg_sca
         out_vec = x_out_vec + aggr_msg_vec
 
+        out_sca = self.layernorm_sca(out_sca)
+        out_vec = self.layernorm_vec(out_vec)
         out = self.out_transform((self.act_sca(out_sca), self.act_vec(out_vec)))
         return out
 
