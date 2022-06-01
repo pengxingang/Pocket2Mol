@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.loss import _WeightedLoss
 from torch_scatter import scatter_mean, scatter_add
-from torch_geometric.nn import knn
-from torch_geometric.nn.pool import knn_graph
+from torch_geometric.nn import knn, knn_graph
+# from torch_geometric.nn.pool import knn_graph
 import numpy as np
 
 def split_tensor_by_batch(x, batch, num_graphs=None):
@@ -206,7 +206,7 @@ class GaussianSmearingVN(nn.Module):
     
     def get_unit_vector(self,):
         vec = torch.tensor([-1., 1.])
-        vec = torch.stack([a.reshape(-1) for a in torch.meshgrid(vec, vec, vec)], dim=-1)
+        vec = torch.stack([a.reshape(-1) for a in torch.meshgrid(vec, vec, vec, indexing=None)], dim=-1)
         vec = vec / np.sqrt(3)
         return vec
 
@@ -328,7 +328,7 @@ def get_edge_atten_input(edge_index_query, n_query, context_bond_index, context_
         for node in torch.arange(n_query):
             num_edges = (row == node).sum()
             index_edge_i = torch.arange(num_edges, dtype=torch.long, device=device) + acc_num_edges
-            index_edge_i, index_edge_j = torch.meshgrid(index_edge_i, index_edge_i)
+            index_edge_i, index_edge_j = torch.meshgrid(index_edge_i, index_edge_i, indexing=None)
             index_edge_i, index_edge_j = index_edge_i.flatten(), index_edge_j.flatten()
             index_real_cps_edge_i_list.append(index_edge_i)
             index_real_cps_edge_j_list.append(index_edge_j)

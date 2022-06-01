@@ -61,23 +61,38 @@ def get_init(data, model, transform, threshold):
     pos_generated, pdf_pos, abs_pos_mu, pos_sigma, pos_pi,
     element_pred, element_prob, has_atom_prob) = [p.cpu() for p in predicitions]
 
-    data_next_list = get_next_step(
-        data,
-        p_focal = p_focal,
-        pos_generated = pos_generated,
-        pdf_pos = pdf_pos,
-        element_pred = element_pred,
-        element_prob = element_prob,
-        has_atom_prob = has_atom_prob,
-        # ind_pred = ind_pred,
-        # ind_prob = ind_prob,
-        bond_index = torch.empty([2, 0]),
-        bond_type = torch.empty([0]),
-        bond_prob = torch.empty([0]),
-        transform = transform,
-        threshold=threshold
-    )
-    data_next_list = [data for data in data_next_list if data.is_high_prob]
+    while True:
+        data_next_list = get_next_step(
+            data,
+            p_focal = p_focal,
+            pos_generated = pos_generated,
+            pdf_pos = pdf_pos,
+            element_pred = element_pred,
+            element_prob = element_prob,
+            has_atom_prob = has_atom_prob,
+            # ind_pred = ind_pred,
+            # ind_prob = ind_prob,
+            bond_index = torch.empty([2, 0]),
+            bond_type = torch.empty([0]),
+            bond_prob = torch.empty([0]),
+            transform = transform,
+            threshold=threshold
+        )
+        data_next_list = [data for data in data_next_list if data.is_high_prob]
+        if len(data_next_list) == 0:
+            if torch.all(pdf_pos < threshold.pos_threshold):
+                threshold.pos_threshold = threshold.pos_threshold / 2
+                print('Positional probability threshold is too high. Change to %f' % threshold.pos_threshold)
+            elif torch.all(p_focal < threshold.focal_threshold):
+                threshold.focal_threshold = threshold.focal_threshold / 2
+                print('Focal probability threshold is too high. Change to %f' % threshold.focal_threshold)
+            elif torch.all(element_prob < threshold.element_threshold):
+                threshold.element_threshold = threshold.element_threshold / 2
+                print('Element probability threshold is too high. Change to %f' % threshold.element_threshold)
+            else:
+                print('Initialization failed.')
+        else:
+            break
 
     return data_next_list
 

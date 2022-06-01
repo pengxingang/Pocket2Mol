@@ -425,6 +425,7 @@ class MaskFillModelVN(Module):
         edge_index_query = torch.stack(torch.meshgrid(
                 torch.arange(len(pos_query), dtype=torch.int64, device=device),
                 torch.arange(len(idx_ligand), dtype=torch.int64, device=device),
+                indexing=None
             ), dim=0).reshape(2, -1)
         query_compose_knn_edge_index = knn(x=compose_pos, y=pos_query, k=self.config.field.knn, num_workers=16)
         index_real_cps_edge_for_atten, tri_edge_index, tri_edge_feat = self.get_tri_edges(
@@ -455,7 +456,7 @@ class MaskFillModelVN(Module):
         for node in torch.arange(pos_query.size(0)):
             num_edges = (row == node).sum()
             index_edge_i = torch.arange(num_edges, dtype=torch.long, ).to('cuda') + acc_num_edges
-            index_edge_i, index_edge_j = torch.meshgrid(index_edge_i, index_edge_i)
+            index_edge_i, index_edge_j = torch.meshgrid(index_edge_i, index_edge_i, indexing=None)
             index_edge_i, index_edge_j = index_edge_i.flatten(), index_edge_j.flatten()
             index_real_cps_edge_i_list.append(index_edge_i)
             index_real_cps_edge_j_list.append(index_edge_j)

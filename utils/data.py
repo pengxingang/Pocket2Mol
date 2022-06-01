@@ -1,8 +1,9 @@
 import copy
 import torch
 import numpy as np
-from torch_geometric.data import Data, DataLoader, Batch
-
+# from torch_geometric.data import Data, DataLoader, Batch
+from torch_geometric.data import Data, Batch
+from torch_geometric.loader import DataLoader
 
 FOLLOW_BATCH = [] #['protein_element', 'ligand_context_element', 'pos_real', 'pos_fake']
 
@@ -27,7 +28,7 @@ class ProteinLigandData(Data):
         instance['ligand_nbh_list'] = {i.item():[j.item() for k, j in enumerate(instance.ligand_bond_index[1]) if instance.ligand_bond_index[0, k].item() == i] for i in instance.ligand_bond_index[0]}
         return instance
 
-    def __inc__(self, key, value):
+    def __inc__(self, key, value, *args, **kwargs):
         if key == 'ligand_bond_index':
             return self['ligand_element'].size(0)
         elif key == 'ligand_context_bond_index':

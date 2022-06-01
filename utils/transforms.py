@@ -18,7 +18,7 @@ from torch_geometric.nn import knn, radius
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 from torch_scatter import scatter_add
 # import multiprocessing as multi
-from torch_geometric.data import DataLoader
+# from torch_geometric.data import DataLoader
 try:
     from .data import ProteinLigandData
     from .datasets import *
@@ -573,7 +573,7 @@ class ContrastiveSample(object):
         for node in torch.arange(data.pos_real.size(0)):
             num_edges = (row == node).sum()
             index_edge_i = torch.arange(num_edges, dtype=torch.long, ) + acc_num_edges
-            index_edge_i, index_edge_j = torch.meshgrid(index_edge_i, index_edge_i)
+            index_edge_i, index_edge_j = torch.meshgrid(index_edge_i, index_edge_i, indexing=None)
             index_edge_i, index_edge_j = index_edge_i.flatten(), index_edge_j.flatten()
             index_real_cps_edge_i_list.append(index_edge_i)
             index_real_cps_edge_j_list.append(index_edge_j)

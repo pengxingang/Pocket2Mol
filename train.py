@@ -7,9 +7,9 @@ from tqdm.auto import tqdm
 import torch
 from torch.nn.utils import clip_grad_norm_
 import torch.utils.tensorboard
-import torch_geometric
-assert not torch_geometric.__version__.startswith('2'), 'Please use torch_geometric lower than version 2.0.0'
-from torch_geometric.data import DataLoader
+# import torch_geometric
+# assert not torch_geometric.__version__.startswith('2'), 'Please use torch_geometric lower than version 2.0.0'
+from torch_geometric.loader import DataLoader
 
 from models.maskfill import MaskFillModelVN
 from utils.datasets import *
@@ -71,16 +71,18 @@ if __name__ == '__main__':
         transform = transform,
     )
     train_set, val_set = subsets['train'], subsets['test']
-    follow_batch = []  
+    follow_batch = []
+    collate_exclude_keys = ['ligand_nbh_list']
     train_iterator = inf_iterator(DataLoader(
         train_set, 
         batch_size = config.train.batch_size, 
         shuffle = True,
         num_workers = config.train.num_workers,
         pin_memory = config.train.pin_memory,
-        follow_batch = follow_batch
+        follow_batch = follow_batch,
+        exclude_keys = collate_exclude_keys,
     ))
-    val_loader = DataLoader(val_set, config.train.batch_size, shuffle=False, follow_batch=follow_batch)
+    val_loader = DataLoader(val_set, config.train.batch_size, shuffle=False, follow_batch=follow_batch, exclude_keys = collate_exclude_keys,)
 
     # Model
     logger.info('Building model...')
