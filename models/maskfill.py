@@ -375,7 +375,7 @@ class MaskFillModelVN(Module):
                     + torch.nan_to_num(loss_fake)
                     + torch.nan_to_num(loss_surf)
         )
-        return loss, loss_frontier, loss_pos, loss_cls, loss_edge, loss_real, loss_fake, loss_surf  # loss_notpos
+        return loss, loss_frontier, loss_pos, loss_cls, loss_edge, loss_real, loss_fake, torch.nan_to_num(loss_surf)  # loss_notpos
         
     def query_batch(self, pos_query_list, batch, limit=10000):
         pos_query, batch_query = concat_tensors_to_batch(pos_query_list)

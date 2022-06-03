@@ -25,7 +25,7 @@ STATUS_FINISHED = 'finished'
 STATUS_FAILED = 'failed'
 
 
-def logp_to_rank_prob(logp, weight):
+def logp_to_rank_prob(logp, weight=1.0):
 
     logp_sum = np.array([np.sum(l) for l in logp])
     prob = np.exp(logp_sum) + 1
@@ -281,7 +281,6 @@ if __name__ == '__main__':
         queue_size = len(pool.queue)
         # # sample candidate new mols from each parent mol
         queue_tmp = []
-        queue_weight = []
         for data in tqdm(pool.queue):
             nexts = []
             data_next_list = get_next(
@@ -316,10 +315,8 @@ if __name__ == '__main__':
                     nexts.append(data_next)
 
             queue_tmp += nexts
-            if len(nexts) > 0:
-                queue_weight += [1. / len(nexts)] * len(nexts)
         # # random choose mols from candidates
-        prob = logp_to_rank_prob(np.array([p.average_logp[2:] for p in queue_tmp]), queue_weight)  # (logp_focal, logpdf_pos), logp_element, logp_hasatom, logp_bond
+        prob = logp_to_rank_prob(np.array([p.average_logp[2:] for p in queue_tmp]),)  # (logp_focal, logpdf_pos), logp_element, logp_hasatom, logp_bond
         n_tmp = len(queue_tmp)
         next_idx = np.random.choice(np.arange(n_tmp), p=prob, size=min(config.sample.beam_size, n_tmp), replace=False)
         pool.queue = [queue_tmp[idx] for idx in next_idx]

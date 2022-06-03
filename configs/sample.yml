@@ -12,7 +12,7 @@ sample:
   seed: 2020
   mask_init: True
   num_samples: 100
-  beam_size: 300
+  beam_size: 500
   max_steps: 50
   threshold:
     focal_threshold: 0.5
