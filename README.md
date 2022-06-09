@@ -15,7 +15,7 @@ Python | 3.8.12
 PyTorch | 1.10.1
 CUDA | 11.3.1
 PyTorch Geometric | **2.0.0**
-RDKit | 2022.09.5
+RDKit | 2022.03
 BioPython | 1.79
 <!-- OpenBabel | 3.1.0 -->
 <!-- NOTE: Current implementation relies on PyTorch Geometric (PyG) < 2.0.0. We will fix compatability issues for the latest PyG version in the future. -->
