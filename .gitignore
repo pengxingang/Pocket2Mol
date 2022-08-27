@@ -5,5 +5,5 @@ logs/*
 .vscode/*
 sample_for_pocket.py
 tmp/*
-evaluation/*
+evaluation/.gitignore
 
