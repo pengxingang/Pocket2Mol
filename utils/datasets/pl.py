@@ -22,7 +22,7 @@ class PocketLigandPairDataset(Dataset):
 
         self.keys = None
 
-        if not os.path.exists(self.processed_path):
+        if not (os.path.exists(self.processed_path) and os.path.exists(self.name2id_path)):
             self._process()
             self._precompute_name2id()
 
