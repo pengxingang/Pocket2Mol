@@ -67,7 +67,11 @@ def reconstruct_from_generated_with_edges(data, raise_error=True, sanitize=True)
     if 12 in bond_type:  # mol may directlu come from ture mols and contains aromatic bonds
         Chem.Kekulize(rd_mol, clearAromaticFlags=True)
     if sanitize:
-        Chem.SanitizeMol(rd_mol, Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY)
+        try:
+            Chem.SanitizeMol(rd_mol, Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY)
+        except:
+            Chem.SanitizeMol(rd_mol)
+           
     return rd_mol
 
 
