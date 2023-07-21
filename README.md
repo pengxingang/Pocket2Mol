@@ -76,6 +76,8 @@ CUDA_VISIBLE_DEVICES=0 taskset -c 2 bash batch_sample.sh  3 2 0
 ```
 The three parameters of `batch_sample.py` represent the number of workers, the index of current worker and the start index of the datapoint in the test set, respectively.
 
+**NOTE: We find it much faster to use only one CPU for one sampling program (i.e., set `taskset -c` to use one CPU).**
+
 ### Sampling for PDB pockets 
 To generate ligands for your own pocket, you need to provide the `PDB` structure file of the protein, the center coordinate of the pocket bounding box, and optionally the side length of the bounding box (default: 23Å).
 
