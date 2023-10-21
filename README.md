@@ -52,6 +52,8 @@ Please refer to [`README.md`](./data/README.md) in the `data` folder.
 
 ## Sampling
 
+**NOTE: It is highly recommended to add `taskset -c` to use only one cpu when sampling (e.g. `taskset -c 0 python sample_xxx.py` to use CPU 0), which is much faster. The reason is not clear yet.**
+
 ### Sampling for pockets in the testset
 
 To sample molecules for the i-th pocket in the testset, please first download the trained models following [`README.md`](./ckpt/README.md) in the `ckpt` folder. 
