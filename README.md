@@ -81,7 +81,7 @@ The three parameters of `batch_sample.py` represent the number of workers, the i
 **NOTE: We find it much faster to use only one CPU for one sampling program (i.e., set `taskset -c` to use one CPU).**
 
 ### Sampling for PDB pockets 
-To generate ligands for your own pocket, you need to provide the `PDB` structure file of the protein, the center coordinate of the pocket bounding box, and optionally the side length of the bounding box (default: 23Å).
+To generate ligands for your own pocket, you need to provide the `PDB` structure file of the protein, the center coordinate of the pocket bounding box, and optionally the side length of the bounding box (default: 23Å). Note that there is a blank before the first value of the `center` parameter. The blank cannot be omitted if the first value is negative (e.g., `--center  " -1.5,28.0,36.0"`).
 
 Example:
 
