@@ -79,9 +79,9 @@ class PocketLigandPairDataset(Dataset):
                         key = str(i).encode(),
                         value = pickle.dumps(data)
                     )
-                except:
+                except Exception as e:
                     num_skipped += 1
-                    print('Skipping (%d) %s' % (num_skipped, ligand_fn, ))
+                    print('Skipping (%d) %s for: %s' % (num_skipped, ligand_fn, e))
                     continue
         db.close()
 
